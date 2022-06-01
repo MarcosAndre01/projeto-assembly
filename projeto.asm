@@ -13,19 +13,20 @@ qtde_alunos: dd 0x0
 
 vetor_divisor: dd 3.0, 3.0, 3.0, 3.0 ; Vetor usado durante a divisão para obter a média
 
-texto_menu: db 'Digite a opcao desejada:', 0xa, '1. Incluir notas de aluno (max. 40 alunos)', 0xa, '2. Exibir medias da turma', 0xa, '3. Sair do programa', 0xa, 0x0
-texto_inserir_nome: db 'Nome (max. 14 caracteres): ', 0xa, 0x0
-texto_limite_atingido: db 'Nao e possivel inserir mais alunos. Limite maximo atingido', 0xa, 0x0
+texto_menu: db 0xa, 'Digite a opcao desejada:', 0xa, '1. Incluir notas de aluno (max. 40 alunos)', 0xa, '2. Exibir medias da turma', 0xa, '3. Sair do programa', 0xa, 0x0
+texto_inserir_nome: db 0xa, 'Nome (max. 14 caracteres): ', 0xa, 0x0
+texto_limite_atingido: db 0xa, 'Nao e possivel inserir mais alunos. Limite maximo atingido', 0xa, 0x0
 texto_inserir_nota1: db 'Insira a primeira nota:', 0xa, 0x0
 texto_inserir_nota2: db 'Insira a segunda nota:', 0xa, 0x0
 texto_inserir_nota3: db 'Insira a terceira nota:', 0xa, 0x0
+texto_nova_linha: db 0xa, 0x0
 
 scan_int: db '%d', 0x0
 print_int: db '%d', 0xa, 0x0
 scan_string: db '%s', 0x0
 print_string: db '%s', 0xa, 0x0
 scan_float: db '%f', 0x0
-print_float: db '%f', 0xa, 0x0
+print_float: db '%.2f', 0xa, 0x0
 
 section .text
 main:
@@ -61,6 +62,7 @@ exibir_menu:
 
   jmp exibir_menu
 
+; inserir um novo aluno e suas notas
 opcao1:
   mov ebx, [qtde_alunos]
   cmp ebx, 40
@@ -70,11 +72,10 @@ opcao1:
   call printf
   add esp, 4
 
-  ; ebx: indice do aluno atual
-  ; ecx: offset do array de nomes dos alunos
   mov ecx, nomes
   
   ; eax: endereço para nome do aluno atual
+  ; ebx: indice do aluno atual
   mov eax, 15
   mul ebx
   add eax, ecx
@@ -134,35 +135,41 @@ opcao1:
   add esp, 8
 
   ; incrementa qtde_alunos
-
   mov eax, [qtde_alunos]
   inc eax
   mov [qtde_alunos], eax
 
   jmp exibir_menu
 
+limite_atingido:
+  push texto_limite_atingido
+  call printf
+  add esp, 4
+  
+  jmp exibir_menu
+
 opcao2:  
+  push texto_nova_linha
+  call printf
+
   ; calcular as medias
-  mov eax, [qtde_alunos]
-  push eax
-  call calcular_medias
+  mov ecx, [qtde_alunos]
+  push ecx
+  call funcao_calcular_medias
   add esp, 4
 
-  ; imprimir nome - media
+  ; imprimir nome e media
   mov ebx, -1 ; contador
 loop_imprimir_medias:
   inc ebx
-  mov eax, 39 ; hardcoded por enquanto
-  sub eax, 1
-  cmp ebx, eax
-  jg fim_loop_imprimir_medias
-
-  mov ecx, nomes
+  mov ecx, [qtde_alunos]
+  cmp ebx, ecx
+  je fim_loop_imprimir_medias
   
   ; eax: endereço do nome do aluno de índice ebx
   mov eax, 15
   mul ebx
-  add eax, ecx
+  add eax, nomes
 
   ; imprimir nome
   push eax
@@ -170,12 +177,10 @@ loop_imprimir_medias:
   call printf
   add esp, 8
 
-  mov ecx, medias
-
   ; eax: endereço da media do aluno
   mov eax, 4
   mul ebx
-  add eax, ecx
+  add eax, medias
 
   ; imprimir media
   fld DWORD[eax]
@@ -187,12 +192,21 @@ loop_imprimir_medias:
 
   jmp loop_imprimir_medias
 
-  
 fim_loop_imprimir_medias:
-  jmp sair
+  jmp exibir_menu
+
+; sair do programa
+opcao3:
+  mov esp, ebp
+  pop ebp
+  ret
+
+  mov eax, 1
+  xor ebx, ebx
+  int 0x80
 
 ; parâmetro: DWORD quantidade de alunos
-calcular_medias:
+funcao_calcular_medias:
   push ebp
   mov ebp, esp
 
@@ -234,18 +248,4 @@ fim_loop_calcular_medias:
   mov esp, ebp
   pop ebp
   ret
-
-opcao3:
-  jmp sair
-
-limite_atingido:
-  push texto_limite_atingido
-  call printf
-  add esp, 4
-  jmp sair
-
-sair:
-  mov eax, 1
-  xor ebx, ebx
-  int 0x80
 
