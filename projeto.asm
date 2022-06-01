@@ -37,10 +37,10 @@ exibir_menu:
   call printf
   add esp, 4
 
+  ; Lê opção do menu para ebp-4
   sub esp, 4
   lea eax, [ebp-4]
 
-  ; Lê opção do menu para ebp-4
   push eax
   push scan_int
   call scanf
@@ -150,12 +150,12 @@ opcao2:
 
   ; imprimir nome - media
   mov ebx, -1 ; contador
-loop:
+loop_imprimir_medias:
   inc ebx
   mov eax, 39 ; hardcoded por enquanto
   sub eax, 1
   cmp ebx, eax
-  jg fim_loop
+  jg fim_loop_imprimir_medias
 
   mov ecx, nomes
   
@@ -185,10 +185,10 @@ loop:
   call printf
   add esp, 12
 
-  jmp loop
+  jmp loop_imprimir_medias
 
   
-fim_loop:
+fim_loop_imprimir_medias:
   jmp sair
 
 ; parâmetro: DWORD quantidade de alunos
@@ -196,62 +196,27 @@ calcular_medias:
   push ebp
   mov ebp, esp
 
-  ; iterações (ebp - 4) = entrada / 4
-  ; se houve resto: iterações = (entrada / 4) + 1
-  mov eax, [ebp+8]
+  ; ecx: offset para a última nota do último aluno
+  mov ecx, [ebp+8]
+  sub ecx, 1
   xor edx, edx
-  mov ebx, 4
-  div ebx
+  mov eax, 4
+  mul ecx
+
+  ; ebx: contador e offset para as proximas quatro notas a serem calculadas
+  mov ebx, -16
+loop_calcular_medias:
+  add ebx, 16
+  cmp ebx, ecx 
+  jg fim_loop_calcular_medias
+   
+  movups xmm1, OWORD[notas1 + ebx]
+  movups xmm2, OWORD[notas2 + ebx]
+  movups xmm3, OWORD[notas3 + ebx]
   
-  cmp edx, 0
-  je qtde_iteracoes
-  inc eax;
-
-qtde_iteracoes:
-  push eax ; ebp - 4 
-  ; push print_int
-  ; call printf
-  ; sub esp, 8
-
-  mov ebx, -4 ; contador
-loop_soma:
-  ; enquanto (qtde_iteracoes > 0):
-  ; ebx += 4, qtde_iteracoes = qtde_iteracoes - 1 
-  mov eax, [ebp-4]
-  cmp eax, 0
-  jg terminar_soma
-  add ebx, 4
-  sub eax, 1
-  mov [ebp-4], eax
-
-  ; eax = endereço das quatro notas1 a serem carregadas no registrador
-  mov ecx, notas1
-
-  mov eax, 16
-  mul ebx
-  add eax, ecx
-
-  movups xmm1, OWORD[eax]
-
-  mov ecx, notas2
-
-  mov eax, 16
-  mul ebx
-  add eax, ecx
-  
-  movups xmm2, OWORD[eax]
-
-  mov ecx, notas3
-
-  mov eax, 16
-  mul ebx
-  add eax, ecx
-  
-  movups xmm3, OWORD[eax]
-
-  ; somar notas e guardar em xmm0
   pxor xmm0, xmm0
 
+  ; somar notas e guardar em xmm0
   addps xmm0, xmm1
   addps xmm0, xmm2
   addps xmm0, xmm3
@@ -261,15 +226,11 @@ loop_soma:
   divps xmm0, xmm4
 
   ; guardar no vetor de medias
-  mov ecx, medias
-  mov eax, 16
-  mul ebx
-  add eax, ecx
-  movups OWORD[eax], xmm0
+  movups OWORD[medias + ebx], xmm0
 
-  jmp loop_soma
+  jmp loop_calcular_medias
 
-terminar_soma:
+fim_loop_calcular_medias:
   mov esp, ebp
   pop ebp
   ret
