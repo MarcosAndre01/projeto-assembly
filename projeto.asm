@@ -250,6 +250,8 @@ loop_soma:
   movups xmm3, OWORD[eax]
 
   ; somar notas e guardar em xmm0
+  pxor xmm0, xmm0
+
   addps xmm0, xmm1
   addps xmm0, xmm2
   addps xmm0, xmm3
