@@ -197,6 +197,8 @@ fim_loop_imprimir_medias:
 
 ; sair do programa
 opcao3:
+  xor eax, eax
+
   mov esp, ebp
   pop ebp
   ret
