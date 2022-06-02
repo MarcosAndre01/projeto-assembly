@@ -11,7 +11,8 @@ medias: times 40 dd 0.0
 
 qtde_alunos: dd 0x0
 
-vetor_divisor: dd 3.0, 3.0, 3.0, 3.0 ; Vetor usado durante a divisão para obter a média
+; Vetor usado durante a divisão para obter a média
+vetor_divisor: dd 3.0, 3.0, 3.0, 3.0 
 
 texto_menu: db 0xa, 'Digite a opcao desejada:', 0xa, '1. Incluir notas de aluno (max. 40 alunos)', 0xa, '2. Exibir medias da turma', 0xa, '3. Sair do programa', 0xa, 0x0
 texto_inserir_nome: db 0xa, 'Nome (max. 14 caracteres): ', 0xa, 0x0
@@ -38,7 +39,7 @@ exibir_menu:
   call printf
   add esp, 4
 
-  ; Lê opção do menu para ebp-4
+  ; Ler opção do menu e salvar em ebp-4
   sub esp, 4
   lea eax, [ebp-4]
 
@@ -47,7 +48,7 @@ exibir_menu:
   call scanf
   add esp, 8
 
-  ; Pula para a opção selecionada
+  ; Pular para a opção selecionada
   mov eax, [ebp-4]
   sub eax, 1
   je opcao1
@@ -62,7 +63,7 @@ exibir_menu:
 
   jmp exibir_menu
 
-; inserir um novo aluno e suas notas
+; Inserir um novo aluno com suas notas
 opcao1:
   mov ebx, [qtde_alunos]
   cmp ebx, 40
@@ -74,13 +75,13 @@ opcao1:
 
   mov ecx, nomes
   
-  ; eax: endereço para nome do aluno atual
-  ; ebx: indice do aluno atual
+  ; eax: Endereço para o nome do aluno atual
+  ; ebx: Índice do aluno atual
   mov eax, 15
   mul ebx
   add eax, ecx
 
-  ; lê nome
+  ; Ler nome
   push eax
   push scan_string 
   call scanf
@@ -92,7 +93,7 @@ opcao1:
 
   mov ecx, notas1
 
-  ; eax: endereço do float para inserir a nota
+  ; eax: Endereço do float onde a nota será inserida 
   mov eax, 4
   mul ebx
   add eax, ecx
@@ -102,7 +103,7 @@ opcao1:
   call scanf
   add esp, 8
 
-  ; nota 2
+  ; Nota 2
   push texto_inserir_nota2
   call printf
   add esp, 4
@@ -118,7 +119,7 @@ opcao1:
   call scanf
   add esp, 8
 
-  ; nota 3
+  ; Nota 3
   push texto_inserir_nota3
   call printf
   add esp, 4
@@ -134,7 +135,7 @@ opcao1:
   call scanf
   add esp, 8
 
-  ; incrementa qtde_alunos
+  ; Incrementa qtde_alunos
   mov eax, [qtde_alunos]
   inc eax
   mov [qtde_alunos], eax
@@ -152,37 +153,37 @@ opcao2:
   push texto_nova_linha
   call printf
 
-  ; calcular as medias
+  ; Calcular as médias
   mov ecx, [qtde_alunos]
   push ecx
   call funcao_calcular_medias
   add esp, 4
 
-  ; imprimir nome e media
-  mov ebx, -1 ; contador
+  ; Imprimir nome e média
+  mov ebx, -1 ; Contador
 loop_imprimir_medias:
   inc ebx
   mov ecx, [qtde_alunos]
   cmp ebx, ecx
   je fim_loop_imprimir_medias
   
-  ; eax: endereço do nome do aluno de índice ebx
+  ; eax: Endereço para o nome do aluno de índice ebx
   mov eax, 15
   mul ebx
   add eax, nomes
 
-  ; imprimir nome
+  ; Imprimir nome
   push eax
   push print_string
   call printf
   add esp, 8
 
-  ; eax: endereço da media do aluno
+  ; eax: Endereço da média do aluno
   mov eax, 4
   mul ebx
   add eax, medias
 
-  ; imprimir media
+  ; Imprimir média
   fld DWORD[eax]
   sub esp, 8
   fstp QWORD[esp]
@@ -195,7 +196,7 @@ loop_imprimir_medias:
 fim_loop_imprimir_medias:
   jmp exibir_menu
 
-; sair do programa
+; Sair do programa
 opcao3:
   xor eax, eax
 
@@ -207,19 +208,19 @@ opcao3:
   xor ebx, ebx
   int 0x80
 
-; parâmetro: DWORD quantidade de alunos
+; Parâmetro: DWORD Quantidade de alunos
 funcao_calcular_medias:
   push ebp
   mov ebp, esp
 
-  ; ecx: offset para a última nota do último aluno
+  ; ecx: Offset para a última nota do último aluno
   mov ecx, [ebp+8]
   sub ecx, 1
   xor edx, edx
   mov eax, 4
   mul ecx
 
-  ; ebx: contador e offset para as proximas quatro notas a serem calculadas
+  ; ebx: Contador e offset para as próximas quatro notas a serem calculadas
   mov ebx, -16
 loop_calcular_medias:
   add ebx, 16
@@ -232,16 +233,16 @@ loop_calcular_medias:
   
   pxor xmm0, xmm0
 
-  ; somar notas e guardar em xmm0
+  ; Somar notas e guardar em xmm0
   addps xmm0, xmm1
   addps xmm0, xmm2
   addps xmm0, xmm3
 
-  ; dividir o somatorio por 3 e obter a média em xmm0
+  ; Dividir o somatório por 3 e obter a média em xmm0
   movups xmm4, OWORD[vetor_divisor]
   divps xmm0, xmm4
 
-  ; guardar no vetor de medias
+  ; Carregar no vetor de médias
   movups OWORD[medias + ebx], xmm0
 
   jmp loop_calcular_medias
