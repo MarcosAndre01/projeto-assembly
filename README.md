@@ -1,6 +1,7 @@
 # projeto-assembly
 
-Projeto para a disciplinad de arquitetura de computadores trabalhando com a linguagem assembly.
+Projeto para a disciplina de arquitetura de computadores trabalhando com a linguagem assembly (Nasm x86).
+
 
 ## Construção e execução
 
